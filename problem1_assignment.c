@@ -19,14 +19,6 @@ struct ThreadReturn
     int minNum, maxNum;
 };
 
-void printarr(int *arr, int n)
-{
-    printf("\n %d \n", getpid());
-
-    for (int i = 0; i < n; i++)
-        printf(" %d ", arr[i]);
-    printf("\n");
-}
 void *runner(void *param);
 int main(void)
 {
@@ -95,8 +87,7 @@ int main(void)
     printf("\nEnter to parent number of array elements for Child2:");
     scanf("%d", &n3);
 
-    int *arr = (int *)malloc(sizeof(int) * n3);
-
+    int arr[n3];
     printf("Enter to parent the array elements for Child2: ");
     char temp;
     for (int i = 0; i < n3; i++)
@@ -114,7 +105,7 @@ int main(void)
         close(pipe4[READ_END]);
         write(pipe2[WRITE_END], &n2, sizeof(int));
         write(pipe3[WRITE_END], &n3, sizeof(int));
-        write(pipe4[WRITE_END], arr, sizeof(int) * n3);
+        write(pipe4[WRITE_END], arr, sizeof(arr));
 
         close(pipe2[WRITE_END]);
         close(pipe3[WRITE_END]);
@@ -125,21 +116,20 @@ int main(void)
         close(pipe2[WRITE_END]);
         close(pipe3[WRITE_END]);
         close(pipe4[WRITE_END]);
-        int n2Read, n3Read;
+        int n2Read;
         read(pipe2[READ_END], &n2Read, sizeof(int));
         close(pipe2[READ_END]);
-
         printf("\nChild2 received %d as no. of threads", n2Read);
+
+        int n3Read;
         read(pipe3[READ_END], &n3Read, sizeof(int));
         close(pipe3[READ_END]);
 
         printf("\nChild2 received %d as number of array elements", n3Read);
-        int *arrRead;
-        arrRead = (int *)malloc(sizeof(int) * n3Read);
-        read(pipe4[READ_END], arrRead, sizeof(int) * n3Read);
+        int arrRead[n3Read];
+        read(pipe4[READ_END], arrRead, sizeof(arrRead));
         close(pipe4[READ_END]);
-
-        printf("\nChild2 Received array as: ");
+        printf("\nChild2 Received array as:");
         for (int i = 0; i < n3Read; i++)
             printf(" %d ", arrRead[i]);
 
