@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 
 #define BUFFER_SIZE 25
 #define READ_END 0
@@ -22,16 +23,18 @@ struct ThreadReturn
 void *runner(void *param);
 int main(void)
 {
+
+    // freopen("input.txt", "r", stdin);
+    // freopen("output.txt", "w", stdout);
     pid_t pid;
     int pipe1[2], pipe2[2], pipe3[2], pipe4[2], pipe5[2];
     int n1, n2, n3, n4;
-    /*  if (pipe(pipe1) == -1)
+    if (pipe(pipe1) == -1)
     {
         fprintf(stderr, "Pipe1 failed");
         return 1;
     }
-    printf("\nI AM %d son of %d", getpid(), getppid());
-    printf("\nEnter to parent the no. of terms of Fibonacci series:");
+    printf("Enter to parent the no. of terms of Fibonacci series:");
     scanf(" %d", &n1);
 
     pid = fork();
@@ -44,11 +47,11 @@ int main(void)
         close(pipe1[READ_END]);
         write(pipe1[WRITE_END], &n1, sizeof(n1));
         close(pipe1[WRITE_END]);
+        wait(NULL);
     }
     else
     {
         //CHILD 1
-        printf("\nI AM %d son of %d", getpid(), getppid());
         close(pipe1[WRITE_END]);
         int n1Read;
         read(pipe1[READ_END], &n1Read, sizeof(n1Read));
@@ -65,8 +68,7 @@ int main(void)
         }
         exit(0);
     }
- */
-    wait(NULL);
+
     if (pipe(pipe2) == -1)
     {
         fprintf(stderr, "Pipe2 failed");
@@ -88,7 +90,7 @@ int main(void)
     scanf("%d", &n3);
 
     int arr[n3];
-    printf("Enter to parent the array elements for Child2: ");
+    printf("\nEnter to parent the array elements for Child2: ");
     char temp;
     for (int i = 0; i < n3; i++)
         scanf("%d%c", &arr[i], &temp);
@@ -110,6 +112,7 @@ int main(void)
         close(pipe2[WRITE_END]);
         close(pipe3[WRITE_END]);
         close(pipe4[WRITE_END]);
+        wait(NULL);
     }
     else
     {
@@ -123,37 +126,43 @@ int main(void)
 
         int n3Read;
         read(pipe3[READ_END], &n3Read, sizeof(int));
+        printf("\nChild2 received %d as number of array elements", n3Read);
         close(pipe3[READ_END]);
 
-        printf("\nChild2 received %d as number of array elements", n3Read);
         int arrRead[n3Read];
         read(pipe4[READ_END], arrRead, sizeof(arrRead));
-        close(pipe4[READ_END]);
         printf("\nChild2 Received array as:");
         for (int i = 0; i < n3Read; i++)
             printf(" %d ", arrRead[i]);
+        close(pipe4[READ_END]);
 
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
         pthread_t workers[n2];
+        pthread_attr_t attr[n3Read];
+        for (int i = 0; i < n3Read; i++)
+            pthread_attr_init(&attr[i]);
+        int countPerThread = n3Read / n2Read;
+
         for (int i = 0; i < n2; i++)
         {
             struct ThreadData *threadData = malloc(sizeof(struct ThreadData));
-            threadData->lower_bound = i * (n3Read / n2Read);
-            threadData->upper_bound = (i + 1) * (n3Read / n2Read) - 1;
+            int l = i * (n3Read / n2Read);
+            threadData->lower_bound = l;
+            threadData->upper_bound = l + countPerThread - 1;
             threadData->threadID = i + 1;
-            threadData->size = n3Read / n2Read;
-            threadData->arr = (int *)malloc(sizeof(int) * n3Read / n2Read);
-            for (int j = 0; j < n3 / n2; j++)
-                threadData->arr[j] = arrRead[i + threadData->lower_bound];
-            pthread_create(&workers[i], &attr, runner, (void *)threadData);
+            threadData->size = countPerThread;
+            threadData->arr = (int *)malloc(sizeof(int) * countPerThread);
+            for (int j = 0; j < countPerThread; j++)
+                threadData->arr[j] = arrRead[j + l];
+            pthread_create(&workers[i], &attr[i], runner, (void *)threadData);
         }
+
         int maxNum = arrRead[0];
         int minNum = arrRead[0];
         for (int i = 0; i < n2; i++)
         {
-            struct ThreadReturn *Result;
-            pthread_join(workers[i], (void **)&Result);
+            void *voidResult;
+            pthread_join(workers[i], &voidResult);
+            struct ThreadReturn *Result = voidResult;
             if (Result->minNum < minNum)
                 minNum = Result->minNum;
             if (Result->maxNum > maxNum)
@@ -162,8 +171,7 @@ int main(void)
         printf("\nCalculated by Child2: max = %d, min = %d", maxNum, minNum);
         exit(0);
     }
-    wait(NULL);
-    /* 
+
     if (pipe(pipe5) == -1)
     {
         fprintf(stderr, "Pipe5 failed");
@@ -187,40 +195,46 @@ int main(void)
     else
     {
         //CHILD 3
-        printf("\nI AM %d son of %d", getpid(), getppid());
         close(pipe5[WRITE_END]);
         int n4Read;
         read(pipe5[READ_END], &n4Read, sizeof(n4Read));
         close(pipe5[READ_END]);
-        printf("\Child3 received %d for factorial computation", n4Read);
-        printf("\nFactorial computed by Child3 is :", n4Read);
+        printf("\nChild3 received %d for factorial computation", n4Read);
+        printf("\nFactorial computed by Child3 is :");
         int i, fact = 1;
         for (i = 1; i <= n4Read; i++)
         {
             fact = fact * i;
         }
-        printf("%d",fact);
+        printf("%d", fact);
         exit(0);
-    } */
+    }
+
     wait(NULL);
-    printf("\nGOODBYE");
+    printf("\nGOODBYE\n");
+    return 0;
 }
 void *runner(void *param)
 {
     struct ThreadData *threadData = (struct ThreadData *)param;
-    printf("Lower bound for Thread%d is: %d", threadData->threadID, threadData->lower_bound);
-    printf("Upper bound for Thread%d is: %d", threadData->threadID, threadData->upper_bound);
-    int minNum = threadData->arr[0], maxNum = threadData->arr[0];
-    for (int i = 1; i < threadData->size; i++)
+
+    printf("\nLower bound for Thread%d is: %d", threadData->threadID, threadData->lower_bound);
+    printf("\nUpper bound for Thread%d is: %d", threadData->threadID, threadData->upper_bound);
+    printf("\nsize for Thread%d is: %d", threadData->threadID, threadData->size);
+    int maxNum = INT_MIN;
+    int minNum = INT_MAX;
+    for (int i = 0; i < threadData->size; i++)
     {
-        if (threadData->arr[i] > maxNum)
-            maxNum = threadData->arr[i];
-        if (threadData->arr[i] < minNum)
-            minNum = threadData->arr[i];
+        int temp = threadData->arr[i];
+        if (temp > maxNum)
+            maxNum = temp;
+
+        if (temp < minNum)
+            minNum = temp;
     }
-    printf("Computed by Thread%d: max = %d, min = %d", threadData->threadID, maxNum, minNum);
-    struct ThreadReturn *threadReturn;
+    printf("\nComputed by Thread%d: max = %d, min = %d", threadData->threadID, maxNum, minNum);
+    struct ThreadReturn *threadReturn = malloc(sizeof(struct ThreadReturn));
     threadReturn->minNum = minNum;
     threadReturn->maxNum = maxNum;
-    pthread_exit((void *)(threadReturn));
+    pthread_exit(threadReturn);
 }
