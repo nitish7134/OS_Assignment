@@ -22,6 +22,8 @@ int compareProcess(struct Process p1, struct Process p2, float W1, float W2)
 }
 void main()
 {
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
     int n;
     float w1, w2;
     printf("Enter the number of processes: ");
@@ -126,6 +128,30 @@ void main()
     printf("\n");
     for (int i = 0; i < n; i++)
     {
-        printf("\nP%d finished at: %d\n", i + 1, process[i].CT);
+        printf("\nP%d finished at: %d", i + 1, process[i].CT);
     }
 }
+/*
+Received Output:
+    Waiting time of P1: 23
+    Waiting time of P2: 24
+    Waiting time of P3: 22
+
+    Average waiting time: 23.000000
+
+    Process Execution Order: P1->P3->P1->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3
+
+    P1 finished at: 22
+    P2 finished at: 26
+    P3 finished at: 27
+
+Expected Output:
+    Waiting time of P1: 12
+    Waiting time of P2: 20
+    Waiting time of P3: 0
+    Average waiting time: 10.66
+    Process Execution Order: P1->P3->P1->P2
+    P1 finished at: 22
+    P2 finished at: 27
+    P3 finished at: 17
+*/
