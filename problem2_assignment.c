@@ -13,17 +13,24 @@ struct Process
 int compareProcess(struct Process p1, struct Process p2, float W1, float W2)
 {
     float ans = (W1 * (p1.BT - p2.BT)) + (W2 * (p1.P - p2.P));
-    if (ans < 0 || (ans == 0 && p1.AT > p2.AT )){
-          //  printf("\n%f ##",ans);
+    if (ans < 0 || (ans == 0 && p1.AT > p2.AT))
+    {
+        //  printf("\n%f ##",ans);
         return 0;
     }
     else
-    return 1;
+        return 1;
 }
 void main()
 {
+
+#ifndef ONLINE_JUDGE
+
     freopen("input.txt", "r", stdin);
+
     freopen("output.txt", "w", stdout);
+
+#endif
     int n;
     float w1, w2;
     printf("Enter the number of processes: ");
@@ -45,25 +52,24 @@ void main()
     scanf("%f", &w1);
     printf("Enter value of w2: ");
     scanf("%f", &w2);
-   
-   
+
     int processCompleted = 0;
     int t = 0;
     char sequence[100];
     int seq = 0;
-    char lastProc = '0';
+    char lastProc = 'n';
     while (processCompleted != n)
     {
         int i = 0;
-        while (i < n && process[i].AT > t)
+        while (i < n && (process[i].AT > t || process[i].CT > 0))
             i++;
         if (i == n)
         {
+            //printf("IDLE : %ds",t);
             t++;
             continue;
         }
         int currentProcess = i++;
-
         for (; i < n; i++)
         {
             if (process[i].CT == -1)
@@ -72,8 +78,6 @@ void main()
                 {
                     if (compareProcess(process[currentProcess], process[i], w1, w2) == 0)
                     {
-                        //printf("\n%d is better than %d so switching to %d : Time %ds", i, currentProcess, i, t);
-                       // printf("\t change cuz currentProcess has BT and P as %d and %d while change to has %d and %d", process[currentProcess].BT, process[currentProcess].P, process[i].BT, process[i].P);
                         currentProcess = i;
                     }
                 }
@@ -81,15 +85,10 @@ void main()
         }
         if (lastProc != process[currentProcess].processno)
         {
-           // printf("\nCHANGED %d to %d at T %ds", lastProc - '1', process[currentProcess].processno - '1', t);
             if (seq != 0)
             {
                 sequence[seq++] = '-';
                 sequence[seq++] = '>';
-            }
-            else
-            {
-                //printf("\nFIRST ONE : %d \n", currentProcess);
             }
             sequence[seq++] = 'P';
             sequence[seq++] = process[currentProcess].processno;
@@ -101,9 +100,14 @@ void main()
         if (process[currentProcess].BT == 0)
         {
             processCompleted++;
-            lastProc = '0';
+            lastProc = 'n';
             process[currentProcess].CT = t;
         }
+       //printf("\nAt t= %ds : ", t);
+        printf("\nP%d",currentProcess+1);
+       //printf("P%d(%d,%d)", currentProcess + 1, process[currentProcess].BT, process[currentProcess].P);
+        if (lastProc == 'n')
+            printf(" THIS IS DONE ");
         t++;
     }
     float sum = 0;
@@ -128,30 +132,6 @@ void main()
     printf("\n");
     for (int i = 0; i < n; i++)
     {
-        printf("\nP%d finished at: %d", i + 1, process[i].CT);
+        printf("\nP%d finished at: %d\n", i + 1, process[i].CT);
     }
 }
-/*
-Received Output:
-    Waiting time of P1: 23
-    Waiting time of P2: 24
-    Waiting time of P3: 22
-
-    Average waiting time: 23.000000
-
-    Process Execution Order: P1->P3->P1->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3
-
-    P1 finished at: 22
-    P2 finished at: 26
-    P3 finished at: 27
-
-Expected Output:
-    Waiting time of P1: 12
-    Waiting time of P2: 20
-    Waiting time of P3: 0
-    Average waiting time: 10.66
-    Process Execution Order: P1->P3->P1->P2
-    P1 finished at: 22
-    P2 finished at: 27
-    P3 finished at: 17
-*/
