@@ -24,8 +24,13 @@ void *runner(void *param);
 int main(void)
 {
 
-    // freopen("input.txt", "r", stdin);
-    // freopen("output.txt", "w", stdout);
+#ifndef ONLINE_JUDGE
+
+    freopen("input.txt", "r", stdin);
+
+    freopen("output.txt", "w", stdout);
+
+#endif
     pid_t pid;
     int pipe1[2], pipe2[2], pipe3[2], pipe4[2], pipe5[2];
     int n1, n2, n3, n4;
