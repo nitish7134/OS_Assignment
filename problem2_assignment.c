@@ -1,29 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h>
+
+const int SIZE =  100;
+
 struct Process
 {
-    char processno;
-    int AT;
-    int BT;
-    int P;
-    int WT;
-    int TAT;
-    int CT;
+    int processno;
+    int AT;                     // Arrival Time
+    int BT;                     // Burst Time
+    int P;                      // Priority
+    int WT;                     // Wait Time
+    int CT;                     // Completion Time
 };
+
+struct Process ReadyQueue[SIZE];
+
+int queueFilled = 0; //How much the Queue is FILLED
+
+int Running; //Stores value of Running Proecess
+
+ //Returns 1 if we should Run process p1, Returns 0 if we should run p2
+ 
 int compareProcess(struct Process p1, struct Process p2, float W1, float W2)
 {
     float ans = (W1 * (p1.BT - p2.BT)) + (W2 * (p1.P - p2.P));
-    if (ans < 0 || (ans == 0 && p1.AT > p2.AT )){
-          //  printf("\n%f ##",ans);
+    if (ans < 0 || (ans == 0 && p1.AT > p2.AT))
+    {
         return 0;
     }
     else
-    return 1;
+        return 1;
 }
+
+
 void main()
 {
-    freopen("input.txt", "r", stdin);
-    freopen("output.txt", "w", stdout);
+   // Running = NULLPROCESS;
+#ifndef ONLINE_JUDGE
+
+    //freopen("input.txt", "r", stdin);
+
+    //freopen("output.txt", "w", stdout);
+
+#endif
     int n;
     float w1, w2;
     printf("Enter the number of processes: ");
@@ -45,70 +64,57 @@ void main()
     scanf("%f", &w1);
     printf("Enter value of w2: ");
     scanf("%f", &w2);
-   
-   
+
     int processCompleted = 0;
     int t = 0;
     char sequence[100];
     int seq = 0;
-    char lastProc = '0';
-    while (processCompleted != n)
+    char lastProc = 'n';
+
+    //SORT PROCESS BY ARRIVAL TIME(O(n^2))
+    for (int i = 0; i < n; i++)
     {
-        int i = 0;
-        while (i < n && process[i].AT > t)
-            i++;
-        if (i == n)
+        for (int j = 0; j < n - 1; j++)
         {
-            t++;
-            continue;
-        }
-        int currentProcess = i++;
-
-        for (; i < n; i++)
-        {
-            if (process[i].CT == -1)
+            if (process[j].AT > process[j + 1].AT)
             {
-                if (process[i].AT <= t)
-                {
-                    if (compareProcess(process[currentProcess], process[i], w1, w2) == 0)
-                    {
-                        //printf("\n%d is better than %d so switching to %d : Time %ds", i, currentProcess, i, t);
-                       // printf("\t change cuz currentProcess has BT and P as %d and %d while change to has %d and %d", process[currentProcess].BT, process[currentProcess].P, process[i].BT, process[i].P);
-                        currentProcess = i;
-                    }
-                }
+                struct Process tempProcess;
+                tempProcess = process[j];
+                process[j] = process[j + 1];
+                process[j + 1] = tempProcess;
             }
         }
-        if (lastProc != process[currentProcess].processno)
-        {
-           // printf("\nCHANGED %d to %d at T %ds", lastProc - '1', process[currentProcess].processno - '1', t);
-            if (seq != 0)
-            {
-                sequence[seq++] = '-';
-                sequence[seq++] = '>';
-            }
-            else
-            {
-                //printf("\nFIRST ONE : %d \n", currentProcess);
-            }
-            sequence[seq++] = 'P';
-            sequence[seq++] = process[currentProcess].processno;
-            lastProc = process[currentProcess].processno;
-        }
-
-        process[currentProcess].BT--;
-
-        if (process[currentProcess].BT == 0)
-        {
-            processCompleted++;
-            lastProc = '0';
-            process[currentProcess].CT = t;
-        }
-        t++;
     }
-    float sum = 0;
-    printf("\n");
 
+    int i = 0;
+    while (processCompleted!=n)
+    {
+        while(process[i].AT==t){
+            ReadyQueue[queueFilled++] = process[i++];
+        }
+        int nxtArrivalTime = process[i].AT;
+        struct Process mxproc = ReadyQueue[0];
+
+        for(int j=1;j<queueFilled;++j){
+            if(!compareProcess(mxproc,process[j],w1,w2)){
+                mxproc = process[j]; 
+            }
+        }
+
+        Running = mxproc.processno;
+
+        int exec_time = min(t+mxproc.BT,nxtArrivalTime);
+        if(exec_time==t+mxproc.BT){
+            processCompleted++;
+            process[Running].CT = t+exec_time;
+            i++;
+        }
+        mxproc.BT-=exec_time;
+        t+=exec_time;
+    }
+    
+
+    float sum;
     for (int i = 0; i < n; i++)
     {
         int wt = process[i].CT - process[i].AT - process[i].BT;
@@ -128,30 +134,6 @@ void main()
     printf("\n");
     for (int i = 0; i < n; i++)
     {
-        printf("\nP%d finished at: %d", i + 1, process[i].CT);
+        printf("\nP%d finished at: %d\n", i + 1, process[i].CT);
     }
 }
-/*
-Received Output:
-    Waiting time of P1: 23
-    Waiting time of P2: 24
-    Waiting time of P3: 22
-
-    Average waiting time: 23.000000
-
-    Process Execution Order: P1->P3->P1->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3->P1->P2->P3
-
-    P1 finished at: 22
-    P2 finished at: 26
-    P3 finished at: 27
-
-Expected Output:
-    Waiting time of P1: 12
-    Waiting time of P2: 20
-    Waiting time of P3: 0
-    Average waiting time: 10.66
-    Process Execution Order: P1->P3->P1->P2
-    P1 finished at: 22
-    P2 finished at: 27
-    P3 finished at: 17
-*/
