@@ -3,6 +3,7 @@
 
 const int INF = 1e6 + 5;
 
+/* Struct for a process*/
 struct Process
 {
     int id;
@@ -12,13 +13,15 @@ struct Process
     int CT;
 };
 
-int n;
-float w1, w2;
-struct Process processData[1000];
-int ReadyQueue[1000];
-int sequence[1000];
-int burst[1000];
+int n;  // Total No. of Processses
+float w1, w2;   // Parameter constants w1,w2
+struct Process processData[1000];   // Array containing all the processes
+int ReadyQueue[1000]; // Array for storing id of processes in Ready Queue
+int sequence[1000]; // Array for storing the sequence of execution 
+int burst[1000]; // Array for storing original burst times prior to execution
 
+
+// Min functiion utility for finding the minimum arrival time
 int min(int i1, int i2)
 {
     if (i1 <= i2)
@@ -29,6 +32,8 @@ int min(int i1, int i2)
         return i2;
 }
 
+
+// max function utility for finding the maximum parameter value out of all given processes
 double max(double d1, double d2)
 {
     if (d1 >= d2)
@@ -39,9 +44,9 @@ double max(double d1, double d2)
         return d2;
 }
 
+// function to fill the ready with all uncomplete processes that have arrived 
 int fillReadyQueue(int T)
 {
-    //printf("Entered readyqueue\n");
     int fillCount = 0;
     for (int i = 0; i < n; ++i)
     {
@@ -53,11 +58,13 @@ int fillReadyQueue(int T)
     return fillCount;
 }
 
+// function to find the parameter value w1*T+w2*PR
 double paramValue(int processID)
 {
     return w1 * processData[processID - 1].BT + w2 * processData[processID - 1].PRT;
 }
 
+// function to find the process that has maximum value of parameter and has arrived the earliest
 int findBestProcess(int RQSize)
 {
     double mxParam = 0.0;
@@ -82,9 +89,9 @@ int findBestProcess(int RQSize)
     }
 }
 
+// function to find the arrival time for the next process, INF if all process have already arrived
 int nxtArrival(int T)
 {
-    // printf("You passed a time of : %d\n", T);
     int nxat = INF;
     for (int i = 0; i < n; ++i)
     {
@@ -96,6 +103,7 @@ int nxtArrival(int T)
     return nxat;
 }
 
+// function to find the waiting time of all processes as WT = CT-AT-BT and avg wt time = sum(wt time)/n
 void waitTime()
 {
     float sum = 0.0;
@@ -111,6 +119,7 @@ void waitTime()
     printf("\n");
 }
 
+// function to print the execution order of process, print only when process changes
 void execOrder()
 {
     int i = 0;
@@ -132,6 +141,7 @@ void execOrder()
     printf("\n");
 }
 
+// function to print the completion time of all the processes
 void completeTime()
 {
     printf("\n");
@@ -144,6 +154,7 @@ void completeTime()
 int main()
 {
 
+    /*Input Starts Here*/
     printf("Enter the number of processes: ");
     scanf("%d", &n);
 
@@ -165,69 +176,58 @@ int main()
     printf("Enter value of w2: ");
     scanf("%f", &w2);
 
+    /*Input Ends*/
+
     int idx = 0, completedProcesses = 0, curTime = 0;
 
-    while (completedProcesses != 3)
+    /*Loop until all processes are complete*/
+    while (completedProcesses != n)
     {
-        int readyQueueFillSize = fillReadyQueue(curTime);
+        int readyQueueFillSize = fillReadyQueue(curTime); // fill the ready queue until
 
-        if (readyQueueFillSize == 0)
-            break;
+        int nxtTime = nxtArrival(curTime); // arrival time for the next process
 
-        // for (int i = 0; i < readyQueueFillSize; ++i)
-        // {
-        //     printf("\nCurrently in Ready Queue : P%d\n", ReadyQueue[i]);
-        // }
-
-        // printf("Ready Queue Size : %d\n", readyQueueFillSize);
-
-        if (readyQueueFillSize == 0)
+        if (readyQueueFillSize == 0)    // If the readyQueue is empty, CPU is IDLE 
         {
             sequence[idx++] = -1;
-            curTime++;
+            curTime+=nxtTime-curTime;
             continue;
         }
-        int RunningID = findBestProcess(readyQueueFillSize);
+        // else readyQueue is not empty
+        int RunningID = findBestProcess(readyQueueFillSize); // find the ID of the best process
 
-        // printf("Currently Best Process : P%d\n", RunningID);
+        sequence[idx++] = RunningID;// set sequence as ID of the choosen process
 
-        sequence[idx++] = RunningID;
+        int execTime;// execution time of the current process
 
-        int nxtTime = nxtArrival(curTime);
-
-        // printf("Next Nearest Process would arrive at : %d\n", nxtTime);
-
-        int execTime;
-
-        if (nxtTime == INF)
+        if (nxtTime == INF) // All processes have already arrived
         {
             execTime = processData[RunningID - 1].BT;
         }
-        else
+        else // We run the choosen process either till its left burst time or until a new process arrives for selection
             execTime = min(nxtTime - curTime, processData[RunningID - 1].BT);
 
-        // printf("This process executed for : %d\n", execTime);
+        processData[RunningID - 1].BT -= execTime;// Burst time of the current process decreases by execution time
 
-        // printf("This process has left burst of : %d\n", processData[RunningID - 1].BT);
 
-        processData[RunningID - 1].BT -= execTime;
+        curTime += execTime;// A time lapse forward till execution time of this process
 
-        // printf("This process has left burst of : %d\n", processData[RunningID - 1].BT);
-
-        curTime += execTime;
-
-        //printf("The time now is : %d\n",curTime);
-
-        if (processData[RunningID - 1].BT == 0)
+        if (processData[RunningID - 1].BT == 0) // No burst left
         {
-            completedProcesses++;
-            processData[RunningID - 1].CT = curTime;
+            completedProcesses++;// Increment completed processes
+            processData[RunningID - 1].CT = curTime; // set the completion time as the current time
         }
     }
 
+    /*Output Sarts Here*/
+    
     waitTime();
 
     execOrder();
 
     completeTime();
+
+    /*Output Ends*/
+
+    return 0;
 }
