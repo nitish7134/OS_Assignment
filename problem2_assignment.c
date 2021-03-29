@@ -77,12 +77,12 @@ int findBestProcess(int RQSize)
     {
         if (paramValue(ReadyQueue[i]) == mxParam)
         {
-            minArrival = min(minArrival, processData[ReadyQueue[i] - 1].AT);
+            minArrival = min(minArrival, processData[ReadyQueue[i] - 1].AT);    //if weighted param equal, then choose min arrival process
         }
     }
     for (int i = 0; i < RQSize; ++i)
     {
-        if (paramValue(ReadyQueue[i]) == mxParam && processData[ReadyQueue[i] - 1].AT == minArrival)
+        if (paramValue(ReadyQueue[i]) == mxParam && processData[ReadyQueue[i] - 1].AT == minArrival)    //if both equal, then procced with with the readyqueue 
         {
             return ReadyQueue[i];
         }
